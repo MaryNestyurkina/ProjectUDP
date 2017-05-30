@@ -1,0 +1,33 @@
+using System;
+using System.IO;
+using System.Reflection;
+
+
+namespace StLib.FileUtils
+{
+    ///<summary>
+    ///Содержит различные методы для работы с файлами
+    ///</summary>
+    public static class StreamReaderExtentions
+    {
+        ///<summary>
+        ///Так как StreamReader.BaseStream.Position работает через жопу, приходится городить такой колхоз
+        ///</summary>
+        public static int GetCurrentPosition(StreamReader streamReader)
+        {
+            Int32 charpos = (Int32)streamReader.GetType().InvokeMember("charPos",
+                    BindingFlags.DeclaredOnly |
+                    BindingFlags.Public | BindingFlags.NonPublic |
+                    BindingFlags.Instance | BindingFlags.GetField
+                    , null, streamReader, null);
+
+            Int32 charlen = (Int32)streamReader.GetType().InvokeMember("charLen",
+                BindingFlags.DeclaredOnly |
+                BindingFlags.Public | BindingFlags.NonPublic |
+                BindingFlags.Instance | BindingFlags.GetField
+                , null, streamReader, null);
+
+            return (Int32)streamReader.BaseStream.Position - charlen + charpos;
+        }
+    }
+}
