@@ -1,0 +1,14 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace StLib.XmlUtils
+{
+    public interface IXmlValidator
+    {
+        bool Validate(string pathToXml);
+        bool ValidateWithReport(string pathToXml, out string report);
+    }
+}

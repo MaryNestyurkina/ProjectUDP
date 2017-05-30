@@ -1,0 +1,112 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Xml;
+using System.Xml.Linq;
+
+namespace StLib.XmlUtils
+{
+    ///<summary>
+    ///Used to validate that xml data description file corresponds the agreements accepted in SUV-A project 
+    ///</summary>
+    public sealed class SuvAXmlValidator : IXmlValidator
+    {
+        private readonly string _validationAttributeName = "name";
+        private readonly string _filterName = "type";
+        private readonly string _filterValue = "bit";
+
+        private string _xmlFileName = String.Empty;
+
+        private List<Tuple<int, string>> _usedNames = new List<Tuple<int, string>>();
+        private List<Tuple<int, string>> _duplicatedNames = new List<Tuple<int, string>>();
+
+        public SuvAXmlValidator() { }
+
+        ///<summary>
+        ///uniqueAttribute - имя уникального атрибута, по которому ведется валидация по умолчанию "name"
+        ///</summary>
+        public SuvAXmlValidator(string uniqueAttribute) { _validationAttributeName = uniqueAttribute; }
+
+        public bool Validate(string pathToXml)
+        {
+            _xmlFileName = pathToXml;
+            XDocument document = XDocument.Load(pathToXml, LoadOptions.SetLineInfo);
+            XmlInOrder(document.Root);
+
+            _usedNames.Clear();
+            _duplicatedNames.Clear();
+
+            if (_duplicatedNames.Count == 0)
+                return true;
+            else
+                return false;
+        }
+        public bool ValidateWithReport(string pathToXml, out string report)
+        {
+            _xmlFileName = pathToXml;
+            XDocument document = XDocument.Load(pathToXml, LoadOptions.SetLineInfo);
+            XmlInOrder(document.Root);
+
+            string validationReport = FormatValidationReport();
+            bool returnResult = _duplicatedNames.Count == 0 ? true : false;
+
+            _usedNames.Clear();
+            _duplicatedNames.Clear();
+
+            report = validationReport;
+
+            return returnResult;
+        }
+        private void XmlInOrder(XElement element)
+        {
+            IEnumerable<XAttribute> elementAttributes = element.Attributes();
+
+            string name = element.Attribute(_validationAttributeName) != null ? element.Attribute(_validationAttributeName).Value : null;
+            string type = element.Attribute(_filterName) != null ? element.Attribute(_filterName).Value : null;
+
+            if(type != _filterValue)
+            {
+                if(name != null)
+                {
+                    IXmlLineInfo info = element;
+                    int lineNumber = ((IXmlLineInfo)element).HasLineInfo() ? ((IXmlLineInfo)element).LineNumber: -1;
+
+                    Tuple<int, string> temp = _usedNames.Find(x => x.Item2 == name);                    
+
+                    if(temp!=null)
+                    {
+                        if(_duplicatedNames.Find(x => x.Item1 == temp.Item1) == null)
+                        {
+                            _duplicatedNames.Add(new Tuple<int, string>(temp.Item1, temp.Item2));
+                        }
+
+                        _duplicatedNames.Add(new Tuple<int, string>(lineNumber, name));                        
+                    }
+
+                    _usedNames.Add(new Tuple<int, string>(lineNumber, name));                
+                }
+            }
+
+            for (int i = 0; i != element.Elements().Count(); i++)
+            {
+                XmlInOrder(element.Elements().ElementAt(i));
+            }
+        }
+
+        private string FormatValidationReport()
+        {
+            if(_duplicatedNames.Count == 0)
+            {
+                return String.Format("File {0} is correct", _xmlFileName);
+            }
+
+            string validationReport = String.Format("Duplicated attributes' values detected in file {0}\n\n", _xmlFileName);
+            foreach (var i in _duplicatedNames)
+            {
+                validationReport += String.Format("Line Number: {0}, {1}=\"{2}\".", i.Item1, _validationAttributeName, i.Item2) + "\n";
+            }            
+
+            return validationReport;
+        }
+    }
+}

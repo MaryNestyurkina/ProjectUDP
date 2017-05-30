@@ -1,0 +1,40 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace StLib.BitUtils
+{
+    public static class BitUtils
+    {
+        public static void ChangeBitsEndian(ref byte val)
+        {
+            byte temp = val;
+            val = 0;
+
+            for (int i = 0; i != 8; i++)
+            {
+                byte some = (byte)((temp >> i) & 1);
+                val |= (byte)(some << (7 - i));
+            }
+        }
+
+        public static void ReverseBytesInWord(UInt16[] buffer)
+        {
+            for (int i = 0; i != buffer.Length; i++)
+            {
+                UInt16 high = (UInt16)((buffer[i] & 0xFF00) >> 8);
+                UInt16 low = (UInt16)((buffer[i] & 0xFF) << 8);
+                buffer[i] = (UInt16)(low | high);
+            }
+        }
+
+        public static void Swap<T>(ref T a, ref T b)
+        {
+            T c = a;
+            a = b;
+            b = c;
+        }
+    }
+}
