@@ -1,0 +1,72 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using WixSharp;
+
+using System.IO;
+
+namespace StLib.DeployUtils
+{
+    public class DirectoryDescriptor
+    {
+        private List<DirectoryDescriptor> _childDirr;
+        private string[] _files;
+        //private WixEntity[] _filesEntries;
+
+        private string _path;
+
+        public DirectoryDescriptor(string path)
+        {
+            _childDirr = new List<DirectoryDescriptor>();
+            _path = path;
+        }
+
+        public DirectoryDescriptor GetEntries()
+        {
+            InitEntriesRecursive(this);
+            return this;
+        }
+        public int GetEntriesCount()
+        {
+            return _childDirr.Count + _files.Length;
+        }
+
+        public List<string> GetChildDirs()
+        {
+            List<string> retValue = new List<string>();
+            GetChildDirsRecursive(retValue, this);
+            return retValue;
+        }
+
+        private void GetChildDirsRecursive(List<string> container, DirectoryDescriptor desc)
+        {
+            foreach(var dir in desc._childDirr)
+            {
+                container.Add(dir._path);
+                GetChildDirsRecursive(container, dir);
+            }
+        }
+
+        private void InitEntriesRecursive(DirectoryDescriptor descriptor)
+        {
+            descriptor._files = Directory.GetFiles(descriptor._path);
+            //foreach(var v in descriptor._files)
+            //{
+            //    descriptor._filesEntries.Add(new WixSharp.File(v));
+            //}
+            string[] subDirs = Directory.GetDirectories(descriptor._path);
+
+            foreach (var d in subDirs)
+            {
+                descriptor._childDirr.Add(new DirectoryDescriptor(d));
+            }
+
+            foreach (var d in descriptor._childDirr)
+            {
+                InitEntriesRecursive(d);
+            }
+        }
+    }
+}
